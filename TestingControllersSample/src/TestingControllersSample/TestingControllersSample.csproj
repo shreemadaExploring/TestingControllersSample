@@ -2,9 +2,32 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-     <IsPackable>true</IsPackable>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(NoBuild)' == 'true' or '$(GeneratePackageOnBuild)' == 'true'">
+    <GenerateNuspecDependsOn>$(GenerateNuspecDependsOn)</GenerateNuspecDependsOn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(NoBuild)' != 'true' and '$(GeneratePackageOnBuild)' != 'true'">
+    <GenerateNuspecDependsOn>Build;$(GenerateNuspecDependsOn)</GenerateNuspecDependsOn>
+  </PropertyGroup>
+  
+  <Target Name="_PackAsBuildAfterTarget"
+          AfterTargets="Build"
+          Condition="'$(GeneratePackageOnBuild)' == 'true' AND '$(IsInnerBuild)' != 'true'"
+          DependsOnTargets="Pack">
+  </Target>
 
+  <Target Name="_CleanPackageFiles"
+          DependsOnTargets="_GetOutputItemsFromPack"
+          AfterTargets="Clean"
+          Condition="'$(GeneratePackageOnBuild)' == 'true'">
+    <ItemGroup>
+      <_PackageFilesToDelete Include="@(_OutputPackItems)"/>
+    </ItemGroup>
+    <Delete Files="@(_PackageFilesToDelete)"/>
+  </Target>
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="3.0.1" />
   </ItemGroup>
